@@ -1,0 +1,7 @@
+.DS_Store
+.pytest_cache/
+__pycache__/
+.idea/
+.gitignore.swp
+trained_models/
+*.py[cod]

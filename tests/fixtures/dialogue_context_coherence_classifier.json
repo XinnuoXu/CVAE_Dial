@@ -1,0 +1,49 @@
+{
+  "dataset_reader": {
+    "type": "dialogue_context"
+  },
+  "train_data_path": "tests/fixtures/debug",
+  "validation_data_path": "tests/fixtures/debug",
+  "model": {
+    "type": "dialogue_context_coherence_classifier",
+    "text_field_embedder": {
+      "tokens": {
+        "type": "embedding",
+        "embedding_dim": 2,
+        "trainable": false
+      }
+    },
+    "context_encoder": {
+      "type": "boe",
+      "embedding_dim": 2,
+      "averaged": true
+    },
+    "response_encoder": {
+      "type": "boe",
+      "embedding_dim": 2,
+      "averaged": true
+    },
+    "classifier_feedforward": {
+      "input_dim": 4,
+      "num_layers": 2,
+      "hidden_dims": [4,2],
+      "activations": ["relu", "linear"],
+      "dropout": [0.2, 0.0]
+    }
+  },
+  "iterator": {
+    "type": "bucket",
+    "sorting_keys": [["response", "num_tokens"], ["context", "num_tokens"]],
+    "padding_noise": 0.0,
+    "batch_size": 64
+  },
+  "trainer": {
+    "num_epochs": 1,
+    "cuda_device": -1,
+    "grad_clipping": 5.0,
+    "validation_metric": "+accuracy",
+    "optimizer": {
+      "type": "adagrad"
+    }
+  }
+}
