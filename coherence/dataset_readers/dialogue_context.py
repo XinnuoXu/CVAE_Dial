@@ -10,6 +10,7 @@ from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 from allennlp.data.tokenizers.word_splitter import JustSpacesWordSplitter
+import random
 
 from overrides import overrides
 
@@ -30,6 +31,7 @@ class DialogueContextDatasetReader(DatasetReader):
     @overrides
     def _read(self, file_path):
         examples = self._read_file(file_path + ".pos", "pos") + self._read_file(file_path + ".neg", "neg")
+        random.shuffle(examples)
         for ex in examples:
             yield ex
 
