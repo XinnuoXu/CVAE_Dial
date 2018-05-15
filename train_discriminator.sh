@@ -11,3 +11,5 @@ ${EXPERIMENT} \
 -s ${MODEL} \
 --include-package coherence
 
+#--file-friendly-logging \
+

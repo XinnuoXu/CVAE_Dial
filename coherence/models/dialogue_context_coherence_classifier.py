@@ -37,8 +37,8 @@ class DialogueContextCoherenceClassifier(Model):
         labels = self.vocab.get_index_to_token_vocabulary('labels')
         pos_label_index = list(labels.keys())[list(labels.values()).index('neg')]
         self.metrics = {
-            "accuracy": CategoricalAccuracy(),
-            "f1": F1Measure(positive_label=pos_label_index)
+            "accuracy": CategoricalAccuracy()
+            # "f1": F1Measure(positive_label=pos_label_index)
         }
         self.loss = torch.nn.CrossEntropyLoss()
         initializer(self)
@@ -73,13 +73,13 @@ class DialogueContextCoherenceClassifier(Model):
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        precision, recall, f1 = self.metrics["f1"].get_metric(reset)
-        metrics = {"accuracy": self.metrics["accuracy"].get_metric(reset),
-                   "precision:": precision,
-                   "recall": recall,
-                   "f1": f1}
-        return metrics
-        # return {metric_name: metric.get_metric(reset) for metric_name, metric in self.metrics.items()}
+        # precision, recall, f1 = self.metrics["f1"].get_metric(reset)
+        # metrics = {"accuracy": self.metrics["accuracy"].get_metric(reset),
+        #            "precision:": precision,
+        #            "recall": recall,
+        #            "f1": f1}
+        # return metrics
+        return {metric_name: metric.get_metric(reset) for metric_name, metric in self.metrics.items()}
 
     @overrides
     def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:

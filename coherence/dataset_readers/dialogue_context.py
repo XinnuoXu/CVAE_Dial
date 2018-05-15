@@ -36,7 +36,7 @@ class DialogueContextDatasetReader(DatasetReader):
     def _read_file(self, file_path, label):
         examples = []
         with open(cached_path(file_path), "r") as data_file:
-            logger.info("Reading instances from file: %s.%s", file_path, label)
+            logger.info("Reading instances from file: %s", file_path, label)
             for line_num, line in enumerate(tqdm.tqdm(data_file.readlines())):
                 line = line.strip("\n")
                 if not line:
