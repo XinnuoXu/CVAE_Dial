@@ -1,6 +1,8 @@
 {
   "dataset_reader": {
-    "type": "dialogue_context"
+    "type": "dialogue_context",
+    "segment_context": false,
+    "shuffle_examples": true
   },
   "train_data_path": "../data/opensubtitles/discriminator/train-dev.rest",
   "validation_data_path": "../data/opensubtitles/discriminator/devel",
@@ -21,7 +23,7 @@
     "context_encoder": {
       "type": "lstm",
       "bidirectional": true,
-      "input_size": 200,
+      "input_size": 100,
       "hidden_size": 100,
       "num_layers": 1,
       "dropout": 0.2
@@ -29,7 +31,7 @@
     "response_encoder": {
       "type": "lstm",
       "bidirectional": true,
-      "input_size": 200,
+      "input_size": 100,
       "hidden_size": 100,
       "num_layers": 1,
       "dropout": 0.2
@@ -55,12 +57,12 @@
       "hidden_dims": [200, 2],
       "activations": ["relu", "linear"],
       "dropout": [0.2, 0.0]
-    }
+    },
+    "initializer": [
+      [".*linear_layers.*weight", {"type": "xavier_normal"}],
+      [".*token_embedder_tokens_projection.*weight", {"type": "xavier_normal"}]
+    ]
   },
-//  "initializer": [
-//      [".*linear_layers.*weight", {"type": "xavier_normal"}],
-//      [".*token_embedder_tokens_projection.*weight", {"type": "xavier_normal"}]
-//     ],
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["response", "num_tokens"], ["context", "num_tokens"]],

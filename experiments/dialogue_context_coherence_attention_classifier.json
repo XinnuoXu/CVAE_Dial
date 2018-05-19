@@ -1,8 +1,10 @@
 {
   "dataset_reader": {
-    "type": "dialogue_context"
+    "type": "dialogue_context",
+    "segment_context": false,
+    "shuffle_examples": true
   },
-  "train_data_path": "../data/opensubtitles/discriminator/devel",
+  "train_data_path": "../data/opensubtitles/discriminator/train-dev.rest",
   "validation_data_path": "../data/opensubtitles/discriminator/devel",
   "vocabulary": {
     "max_vocab_size": 20000
