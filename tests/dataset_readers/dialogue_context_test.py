@@ -8,27 +8,58 @@ from coherence.dataset_readers import DialogueContextDatasetReader
 class TestDialogueContextReader(AllenNlpTestCase):
     def test_read_from_file(self):
 
-        reader = DialogueContextDatasetReader()
+        reader = DialogueContextDatasetReader(segment_context=False, shuffle_examples=False)
 
         instances = ensure_list(reader.read("tests/fixtures/debug"))
 
-        instance1 = {"context": "summertime it 's better for a mother and her cubs to hang out in the relative safety "
-                                "of some tall grass staying close to mom is an inbuilt mechanism for survival".split(),
-                     "response": "even so , fewer than half the cubs will make it to adulthood".split(),
-                     "label": "pos"}
-
-        instance2 = {"context": "watch out ! <u2> oh , what fun ! <u1> jon :".split(),
+        instance1 = {"context": "watch out ! <u2> oh , what fun ! <u1> jon :".split(),
                      "response": "oh , that was great !".split(),
+                     "label": "neg"}
+
+        instance2 = {"context": "can we eat now ? <u2> keep your shirt on . <u1> we 'll be in potter 's cove in "
+                                "20 minutes .".split(),
+                     "response": "ok , how about some pictures ?".split(),
                      "label": "neg"}
 
         assert len(instances) == 20
 
-        fields = instances[0].fields
+        fields = instances[10].fields
         assert [t.text for t in fields["context"].tokens] == instance1["context"]
         assert [t.text for t in fields["response"].tokens] == instance1["response"]
         assert fields['label'].label == instance1['label']
 
-        fields = instances[10].fields
+        fields = instances[18].fields
         assert [t.text for t in fields["context"].tokens] == instance2["context"]
+        assert [t.text for t in fields["response"].tokens] == instance2["response"]
+        assert fields['label'].label == instance2['label']
+
+    def test_list_read_from_file(self):
+
+        reader = DialogueContextDatasetReader(segment_context=True, shuffle_examples=False)
+
+        instances = ensure_list(reader.read("tests/fixtures/debug"))
+
+        instance1 = {"context": ["watch out !".split(), "oh , what fun !".split(), "jon :".split()],
+                     "response": "oh , that was great !".split(),
+                     "label": "neg"}
+
+        instance2 = {"context": ["can we eat now ?".split(), "keep your shirt on .".split(),
+                                 "we 'll be in potter 's cove in 20 minutes .".split()],
+                     "response": "ok , how about some pictures ?".split(),
+                     "label": "neg"}
+
+        assert len(instances) == 20
+
+        fields = instances[10].fields
+        sents = [field.tokens for field in [sent for sent in fields['context'].field_list]]
+        for a, b in zip(sents, instance1["context"]):
+            assert [t.text for t in a] == b
+        assert [t.text for t in fields["response"].tokens] == instance1["response"]
+        assert fields['label'].label == instance1['label']
+
+        fields = instances[18].fields
+        sents = [field.tokens for field in [sent for sent in fields['context'].field_list]]
+        for a, b in zip(sents, instance2["context"]):
+            assert [t.text for t in a] == b
         assert [t.text for t in fields["response"].tokens] == instance2["response"]
         assert fields['label'].label == instance2['label']
