@@ -48,10 +48,16 @@ class DialogueContextDatasetReader(DatasetReader):
                 line = line.strip("\n")
                 if not line:
                     continue
-                context, response = line.split("\t")
+                context, response = line.split("\t", 1)
                 if self._segment_context:
                     context = self.segment_context(context)
-                examples.append(self.text_to_instance(context, response, label))
+                # in case there are multiple responses for the same context; useful for creating unbalanced datasets
+                candidate_responses = response.split("\t")
+                if len(candidate_responses) > 1:
+                    for candidate_response in candidate_responses:
+                        examples.append(self.text_to_instance(context, candidate_response, label))
+                else:
+                    examples.append(self.text_to_instance(context, response, label))
         return examples
 
     def segment_context(self, context: str):

@@ -63,3 +63,32 @@ class TestDialogueContextReader(AllenNlpTestCase):
             assert [t.text for t in a] == b
         assert [t.text for t in fields["response"].tokens] == instance2["response"]
         assert fields['label'].label == instance2['label']
+
+    def test_read_from_unbalanced_file(self):
+
+        reader = DialogueContextDatasetReader(segment_context=False, shuffle_examples=False)
+
+        instances = ensure_list(reader.read("tests/fixtures/debug_unbalanced"))
+
+        instance1 = {"context": "penguins mate for life . <u2> you 're not a penguin . <u1> we 're closest to apes , "
+                                "actually , and they don 't mate for life .".split(),
+                     "response": "take her back to the workhouse .".split(),
+                     "label": "neg"}
+
+        instance2 = {"context": "penguins mate for life . <u2> you 're not a penguin . <u1> we 're closest to apes , "
+                                "actually , and they don 't mate for life .".split(),
+                     "response": "what about tomorrow ?".split(),
+                     "label": "neg"}
+
+        assert len(instances) == 30
+
+        # these two negative instances have been created automatically by parsing a single line in the input file
+        fields = instances[10].fields
+        assert [t.text for t in fields["context"].tokens] == instance1["context"]
+        assert [t.text for t in fields["response"].tokens] == instance1["response"]
+        assert fields['label'].label == instance1['label']
+
+        fields = instances[11].fields
+        assert [t.text for t in fields["context"].tokens] == instance2["context"]
+        assert [t.text for t in fields["response"].tokens] == instance2["response"]
+        assert fields['label'].label == instance2['label']
