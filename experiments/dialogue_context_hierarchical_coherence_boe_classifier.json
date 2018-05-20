@@ -10,7 +10,7 @@
     "max_vocab_size": 20000
   },
   "model": {
-    "type": "dialogue_context_coherence_classifier",
+    "type": "dialogue_context_hierarchical_coherence_classifier",
     "text_field_embedder": {
       "tokens": {
         "type": "embedding",
