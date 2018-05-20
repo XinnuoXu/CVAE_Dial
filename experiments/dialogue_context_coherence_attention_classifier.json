@@ -17,7 +17,7 @@
         "pretrained_file": "../embeddings/glove.6B/glove.6B.300d.txt.gz",
         "projection_dim": 200,
         "embedding_dim": 300,
-        "trainable": false
+        "trainable": true
       }
     },
     "attend_feedforward": {
@@ -42,25 +42,26 @@
       "activations": ["relu", "linear"],
       "dropout": [0.2, 0.0]
     },
-    "initializer": [
+  	"initializer": [
       [".*linear_layers.*weight", {"type": "xavier_normal"}],
       [".*token_embedder_tokens_projection.*weight", {"type": "xavier_normal"}]
-    ]
+     ]
   },
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["response", "num_tokens"], ["context", "num_tokens"]],
     "padding_noise": 0.0,
-    "batch_size": 64
+    "batch_size": 128
   },
   "trainer": {
     "num_epochs": 40,
     "patience": 10,
-    "cuda_device": -1,
+    "cuda_device": 0,
     "grad_clipping": 5.0,
     "validation_metric": "+accuracy",
     "optimizer": {
-      "type": "adagrad"
+      "type": "adagrad",
+//      lr: 1.0
     }
   }
 }

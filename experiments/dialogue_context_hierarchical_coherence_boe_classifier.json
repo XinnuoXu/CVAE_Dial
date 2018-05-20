@@ -5,6 +5,7 @@
     "shuffle_examples": true
   },
   "train_data_path": "../data/opensubtitles/discriminator/train-dev.rest",
+  //"train_data_path": "../data/opensubtitles/discriminator/devel",
   "validation_data_path": "../data/opensubtitles/discriminator/devel",
   "vocabulary": {
     "max_vocab_size": 20000
@@ -14,7 +15,7 @@
     "text_field_embedder": {
       "tokens": {
         "type": "embedding",
-        "pretrained_file": "../embeddings/glove.6B/glove.6B.100d.txt.gz",
+//        "pretrained_file": "../embeddings/glove.6B/glove.6B.100d.txt.gz",
         "embedding_dim": 100,
         "trainable": true
       }
@@ -39,19 +40,23 @@
       "num_layers": 2,
       "hidden_dims": [100, 2],
       "activations": ["relu", "linear"],
-      "dropout": [0.2, 0.0]
-    }
+      "dropout": [0.0, 0.0]
+    },
+    "initializer": [
+      [".*linear_layers.*weight", {"type": "xavier_normal"}],
+      [".*token_embedder_tokens_projection.*weight", {"type": "xavier_normal"}]
+    ]
   },
   "iterator": {
     "type": "bucket",
     "sorting_keys": [["response", "num_tokens"]],
     "padding_noise": 0.0,
-    "batch_size": 64
+    "batch_size": 256
   },
   "trainer": {
     "num_epochs": 40,
     "patience": 10,
-    "cuda_device": -1,
+    "cuda_device": 0,
     "grad_clipping": 5.0,
     "validation_metric": "+accuracy",
     "optimizer": {

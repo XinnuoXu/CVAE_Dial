@@ -4,8 +4,8 @@
     "segment_context": false,
     "shuffle_examples": true
   },
-  "train_data_path": "../data/opensubtitles/discriminator/train-dev.rest",
-  "validation_data_path": "../data/opensubtitles/discriminator/devel",
+  "train_data_path": "../data/opensubtitles/discriminator/balanced/train",
+  "validation_data_path": "../data/opensubtitles/discriminator/balanced/devel",
   "vocabulary": {
     "max_vocab_size": 20000
   },
@@ -14,16 +14,16 @@
     "text_field_embedder": {
       "tokens": {
         "type": "embedding",
-        "pretrained_file": "../embeddings/glove.6B/glove.6B.300d.txt.gz",
-        "projection_dim": 200,
-        "embedding_dim": 300,
-        "trainable": false
+//        "pretrained_file": "../embeddings/glove.6B/glove.6B.300d.txt.gz",
+//        "projection_dim": 200,
+        "embedding_dim": 200,
+        "trainable": true
       }
     },
     "context_encoder": {
       "type": "lstm",
       "bidirectional": true,
-      "input_size": 100,
+      "input_size": 200,
       "hidden_size": 100,
       "num_layers": 1,
       "dropout": 0.2
@@ -31,7 +31,7 @@
     "response_encoder": {
       "type": "lstm",
       "bidirectional": true,
-      "input_size": 100,
+      "input_size": 200,
       "hidden_size": 100,
       "num_layers": 1,
       "dropout": 0.2
@@ -67,16 +67,17 @@
     "type": "bucket",
     "sorting_keys": [["response", "num_tokens"], ["context", "num_tokens"]],
     "padding_noise": 0.0,
-    "batch_size": 64
+    "batch_size": 100
   },
   "trainer": {
     "num_epochs": 40,
     "patience": 10,
-    "cuda_device": -1,
+    "cuda_device": 0,
     "grad_clipping": 5.0,
     "validation_metric": "+accuracy",
     "optimizer": {
-      "type": "adagrad"
+      "type": "adagrad",
+//      lr: 1.0
     }
   }
 }

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 CLASSIFIER=$1
-EXPERIMENT=experiments/dialogue_context_coherence_${CLASSIFIER}_classifier.json
-MODEL=trained_models/${CLASSIFIER}
+EXPERIMENT=experiments/dialogue_context_${CLASSIFIER}_classifier.json
+MODEL=trained_models/${CLASSIFIER}${2}
 
-rm -fr $MODEL
+# rm -fr $MODEL
 
 allennlp train \
 ${EXPERIMENT} \
