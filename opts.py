@@ -370,6 +370,9 @@ def train_opts(parser):
     # GloVe
     group.add_argument('-glove_dir', default="",
                        help='Source directory for image or audio files')
+    # Discriminator
+    #group.add_argument('-disc_model', default="",
+    #                   help='Discriminator model file path')
 
 
 def translate_opts(parser):

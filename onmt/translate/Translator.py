@@ -24,8 +24,8 @@ class Translator(object):
        beam_trace (bool): trace beam search for debugging
     """
     def __init__(self, model, fields,
-                 beam_size, c_control = 100, 
-		 n_best=1, max_length=100,
+                 beam_size, c_control = 100,
+                 n_best=1, max_length=100,
                  global_scorer=None, copy_attn=False, cuda=False,
                  beam_trace=False, min_length=0):
         self.model = model
@@ -37,7 +37,7 @@ class Translator(object):
         self.beam_size = beam_size
         self.cuda = cuda
         self.min_length = min_length
-	self.c_control = c_control
+        self.c_control = c_control
 
         # for debugging
         self.beam_accum = None
@@ -93,27 +93,27 @@ class Translator(object):
         # (1) Run the encoder on the src.
         tgt = onmt.io.make_features(batch, 'tgt', data_type)
         src = onmt.io.make_features(batch, 'src', data_type)
-	srcs = torch.cat([src.view(src.size()[0], -1)] * beam_size, dim=1)
+        srcs = torch.cat([src.view(src.size()[0], -1)] * beam_size, dim=1)
 
         src_lengths = None
         if data_type == 'text':
             _, src_lengths = batch.src
-	
-	# Encoder
-        enc_states, context = self.model.encoder(src, src_lengths)
-	# Latent variable
-        z_true = self.model.get_latent_variable_test(src, src_lengths)
-	# Control variable
-	if self.c_control >= -1 and self.c_control <= 1:
-	    c_list = [self.c_control] * src.size()[1]
-	else:
-	    c_list = self.model.glv.run(src, tgt)
-	c = Variable(tt.FloatTensor(c_list).view(len(c_list), -1))
-	c = c.expand(-1, beam_size).t().contiguous().view(-1, 1)
-	c_var = Variable(tt.FloatTensor(c_list).view(-1, len(c_list), 1))
-	c_cat = torch.cat([c_var, c_var.clone()], 0)
 
-	# Concate
+        # Encoder
+        enc_states, context = self.model.encoder(src, src_lengths)
+        # Latent variable
+        z_true = self.model.get_latent_variable_test(src, src_lengths)
+        # Control variable
+        if self.c_control >= -1 and self.c_control <= 1:
+            c_list = [self.c_control] * src.size()[1]
+        else:
+            c_list = self.model.glv.run(src, tgt)
+        c = Variable(tt.FloatTensor(c_list).view(len(c_list), -1))
+        c = c.expand(-1, beam_size).t().contiguous().view(-1, 1)
+        c_var = Variable(tt.FloatTensor(c_list).view(-1, len(c_list), 1))
+        c_cat = torch.cat([c_var, c_var.clone()], 0)
+
+        # Concate
         lv_enc_states = tuple([torch.cat([enc_states[i], z_true[i], c_cat], z_true[i].dim()-1) for i in range(0, len(z_true))])
 
         context = self.model.glb_linear(context)
@@ -153,15 +153,15 @@ class Translator(object):
             # in the decoder
             inp = inp.unsqueeze(2)
 
-	    # get c_iter
-	    if i == 0:
-		if self.cuda:
-		    c_iter = Variable(torch.zeros(inp.size()[1], 1)).cuda()
-		else:
-		    c_iter = Variable(torch.zeros(inp.size()[1], 1))
-	    else:
-	        gens = Variable(torch.cat([b.get_current_seq() for j, b in enumerate(beam)], dim = 1).view(-1, i).t()).contiguous()
-	        c_iter = Variable(tt.FloatTensor(self.model.glv.run(srcs, gens)).view(-1, 1))
+            # get c_iter
+            if i == 0:
+                if self.cuda:
+                    c_iter = Variable(torch.zeros(inp.size()[1], 1)).cuda()
+                else:
+                    c_iter = Variable(torch.zeros(inp.size()[1], 1))
+            else:
+                gens = Variable(torch.cat([b.get_current_seq() for j, b in enumerate(beam)], dim = 1).view(-1, i).t()).contiguous()
+                c_iter = Variable(tt.FloatTensor(self.model.glv.run(srcs, gens)).view(-1, 1))
 
             # Run one step.
             dec_out, dec_states, attn = self.model.decoder(
@@ -229,16 +229,16 @@ class Translator(object):
         tgt_in = onmt.io.make_features(batch, 'tgt')[:-1]
 
         #  (1) run the encoder on the src
-	# Encoding
+        # Encoding
         enc_states, context = self.model.encoder(src, src_lengths)
-	# Latent variable
+        # Latent variable
         z_true = self.model.get_latent_variable_test(src, src_lengths)
-	# Control variable
-	c_list = self.model.glv.run(src, tgt_in)
-	c = Variable(tt.FloatTensor(c_list).view(len(c_list), -1))
-	c_iter = Variable(tt.FloatTensor(self.model.glv.run_iter(src, tgt_in))) 
-	c_var = Variable(tt.FloatTensor(c_list).view(-1, len(c_list), 1))
-	c_cat = torch.cat([c_var, c_var.clone()], 0)
+        # Control variable
+        c_list = self.model.glv.run(src, tgt_in)
+        c = Variable(tt.FloatTensor(c_list).view(len(c_list), -1))
+        c_iter = Variable(tt.FloatTensor(self.model.glv.run_iter(src, tgt_in)))
+        c_var = Variable(tt.FloatTensor(c_list).view(-1, len(c_list), 1))
+        c_cat = torch.cat([c_var, c_var.clone()], 0)
 
         lv_enc_states = tuple([torch.cat([enc_states[i], z_true[i], c_cat], z_true[i].dim()-1) for i in range(0, len(z_true))])
         context = self.model.glb_linear(context)

@@ -126,9 +126,9 @@ class RNNEncoder(EncoderBase):
         "See :obj:`EncoderBase.forward()`"
         self._check_args(input, lengths, hidden)
 
-	if soft:
-	    emb = input
-	else:
+        if soft:
+            emb = input
+        else:
             emb = self.embeddings(input)
         s_len, batch, emb_dim = emb.size()
 
@@ -205,7 +205,7 @@ class RNNDecoderBase(nn.Module):
         self.hidden_size = hidden_size
         self.embeddings = embeddings
         self.dropout = nn.Dropout(dropout)
-	self.cuda = cuda
+        self.cuda = cuda
 
         # Build the RNN.
         self.rnn = self._build_rnn(rnn_type, self._input_size, hidden_size,
@@ -340,9 +340,9 @@ class StdRNNDecoder(RNNDecoderBase):
         attns = {"std": []}
         coverage = None
 
-	if soft:
-	    emb = input
-	else:
+        if soft:
+            emb = input
+        else:
             emb = self.embeddings(input)
 
         # Run the forward pass of the RNN.
@@ -644,7 +644,7 @@ class LatentVaraibleModel(nn.Module):
     def __init__(self, encoder, decoder, tgt_dict, \
                 enc_approx, approx_mu, approx_logvar, \
                 enc_true, true_mu, true_logvar, \
-		glb, glv, max_gen_len, cuda, multigpu=False):
+                glb, glv, max_gen_len, cuda, multigpu=False):
         self.multigpu = multigpu
         super(LatentVaraibleModel, self).__init__()
         self.encoder = encoder
@@ -659,12 +659,12 @@ class LatentVaraibleModel(nn.Module):
         self.true_logvar = true_logvar
 
         self.glb_linear = glb
-	self.glv = glv
+        self.glv = glv
         self.is_cuda = cuda
         self.tt = torch.cuda if cuda else torch
 
-	self.max_gen_len = max_gen_len
-	self.tgt_dict = tgt_dict
+        self.max_gen_len = max_gen_len
+        self.tgt_dict = tgt_dict
 
     def get_length(self, batch, blank=0):
         lengths = self.tt.LongTensor(batch.size()[1]).zero_()
@@ -676,7 +676,7 @@ class LatentVaraibleModel(nn.Module):
         return lengths
 
     def encode_context_response(self, tgt, src, lengths, encoder):
-	hiddens, _ = encoder(src, lengths)
+        hiddens, _ = encoder(src, lengths)
         # Sort tgt for encoding according to length
         tgt_lens = self.get_length(tgt)
         lens_sorted, id_sorted = tgt_lens.topk(tgt_lens.size()[0])
@@ -690,7 +690,7 @@ class LatentVaraibleModel(nn.Module):
 
         # Encode tgt
         hiddens_st, _ = encoder(tgt_sorted, lens_sorted, hidden=hiddens_sorted)
-        
+
         # Sort back
         minus_id_sorted, id_sorted_rvs = (-1 * id_sorted).topk(tgt_lens.size()[0])
         hiddens_ret = []
@@ -717,7 +717,7 @@ class LatentVaraibleModel(nn.Module):
         app_mu_dist = [self.approx_mu(hiddens_approx[i]) for i in range(0, len(hiddens_approx))]
         app_logvar_dist = [self.approx_logvar(hiddens_approx[i]) for i in range(0, len(hiddens_approx))]
         z_app = self.sampling(app_mu_dist, app_logvar_dist)
-        
+
         hiddens_true, _ = self.enc_true(src, lengths)
         true_mu_dist = [self.true_mu(hiddens_true[i]) for i in range(0, len(hiddens_true))]
         true_logvar_dist = [self.true_logvar(hiddens_true[i]) for i in range(0, len(hiddens_true))]
@@ -725,18 +725,18 @@ class LatentVaraibleModel(nn.Module):
         return z_app, z_true, app_mu_dist, app_logvar_dist, true_mu_dist, true_logvar_dist
 
     def get_latent_variable_soft(self, src, tgt_soft, lengths, batch_size):
-	# Encoding src
-	hiddens, _ = self.enc_approx(src, lengths)
-	# Get tgt soft embedding
-	input_emb = [torch.mm(item, self.enc_approx.embeddings.word_lut.weight) for item in tgt_soft]
-	input_emb = torch.cat(input_emb, dim=0).view(self.max_gen_len - 1, batch_size, -1)
-	# Encoding tgt soft
-	tgt_lengths = self.tt.LongTensor(batch_size).fill_(self.max_gen_len - 1)
-	hiddens_approx, _ = self.enc_approx(input_emb, tgt_lengths, hidden=hiddens, soft=True)
-	# Get z distribution
-	est_mu_dist = [self.approx_mu(hiddens_approx[i]) for i in range(0, len(hiddens_approx))]
-	est_logvar_dist = [self.approx_logvar(hiddens_approx[i]) for i in range(0, len(hiddens_approx))]
-	return est_mu_dist, est_logvar_dist
+        # Encoding src
+        hiddens, _ = self.enc_approx(src, lengths)
+        # Get tgt soft embedding
+        input_emb = [torch.mm(item, self.enc_approx.embeddings.word_lut.weight) for item in tgt_soft]
+        input_emb = torch.cat(input_emb, dim=0).view(self.max_gen_len - 1, batch_size, -1)
+        # Encoding tgt soft
+        tgt_lengths = self.tt.LongTensor(batch_size).fill_(self.max_gen_len - 1)
+        hiddens_approx, _ = self.enc_approx(input_emb, tgt_lengths, hidden=hiddens, soft=True)
+        # Get z distribution
+        est_mu_dist = [self.approx_mu(hiddens_approx[i]) for i in range(0, len(hiddens_approx))]
+        est_logvar_dist = [self.approx_logvar(hiddens_approx[i]) for i in range(0, len(hiddens_approx))]
+        return est_mu_dist, est_logvar_dist
 
     def get_latent_variable_test(self, src, lengths):
         hiddens, _ = self.enc_true(src, lengths)
@@ -746,22 +746,23 @@ class LatentVaraibleModel(nn.Module):
         return z_true
 
     def soft_decoder(self, rs_enc_state, batch_size, context, lengths, c, src):
-	prob_list = []
-	bos = self.tgt_dict.stoi[onmt.io.BOS_WORD]
-	inp = Variable(self.tt.LongTensor(batch_size).fill_(bos).view(1, batch_size, -1))
-	# First word
-	c_list = self.glv.run(src, inp)
-	c_iter = Variable(self.tt.FloatTensor(c_list).contiguous().view(len(c_list), -1))
-	dec_out, dec_states, attn = self.decoder(inp, context, rs_enc_state, c, c_iter, context_lengths=lengths)
-    	for i in range(1, self.max_gen_len):
-	    dec_out = dec_out.squeeze(0)
-	    out = F.softmax(self.generator.forward(dec_out).view(batch_size, -1), dim=1)
-	    prob_list.append(out)
-	    soft_emb = torch.mm(out, self.decoder.embeddings.word_lut.weight).view(1, batch_size, -1)
-	    c_list_iter = self.glv.run_soft(src, prob_list)
-	    c_iter = c_list_iter.view(c_list_iter.size()[0], -1)
-	    dec_out, dec_states, attn = self.decoder(soft_emb, context, dec_states, c, c_iter, context_lengths=lengths, soft=True)
-	return prob_list
+        prob_list = []
+        bos = self.tgt_dict.stoi[onmt.io.BOS_WORD]
+        inp = Variable(self.tt.LongTensor(batch_size).fill_(bos).view(1, batch_size, -1))
+        # First word
+        c_list = self.glv.run(src, inp)
+        c_iter = Variable(self.tt.FloatTensor(c_list).contiguous().view(len(c_list), -1))
+        dec_out, dec_states, attn = self.decoder(inp, context, rs_enc_state, c, c_iter, context_lengths=lengths)
+
+        for i in range(1, self.max_gen_len):
+            dec_out = dec_out.squeeze(0)
+            out = F.softmax(self.generator.forward(dec_out).view(batch_size, -1), dim=1)
+            prob_list.append(out)
+            soft_emb = torch.mm(out, self.decoder.embeddings.word_lut.weight).view(1, batch_size, -1)
+            c_list_iter = self.glv.run_soft(src, prob_list)
+            c_iter = c_list_iter.view(c_list_iter.size()[0], -1)
+            dec_out, dec_states, attn = self.decoder(soft_emb, context, dec_states, c, c_iter, context_lengths=lengths, soft=True)
+        return prob_list
 
     def forward(self, src, tgt, lengths, dec_state=None, only_mle = False):
         """Forward propagate a `src` and `tgt` pair for training.
@@ -790,51 +791,51 @@ class LatentVaraibleModel(nn.Module):
         # Seq2seq: Encode context
         enc_hidden, context = self.encoder(src, lengths)
 
-	# Control Variable
-	c_list = self.glv.run(src, tgt)
-	c = Variable(self.tt.FloatTensor(c_list).view(len(c_list), -1))
-	c_var = Variable(self.tt.FloatTensor(c_list).view(-1, len(c_list), 1))
-	c_cat = torch.cat([c_var, c_var.clone()], 0)
+        # Control Variable
+        c_list = self.glv.run(src, tgt)
+        c = Variable(self.tt.FloatTensor(c_list).view(len(c_list), -1))
+        c_var = Variable(self.tt.FloatTensor(c_list).view(-1, len(c_list), 1))
+        c_cat = torch.cat([c_var, c_var.clone()], 0)
 
-	# Control Variable step by step
-	c_iter = Variable(self.tt.FloatTensor(self.glv.run_iter(src, tgt)))
+        # Control Variable step by step
+        c_iter = Variable(self.tt.FloatTensor(self.glv.run_iter(src, tgt)))
 
         # Latent Variable
         z_app, z_true, app_mu_dist, app_logvar_dist, true_mu_dist, true_logvar_dist = \
-		self.get_latent_variable(tgt, src, lengths)
+                self.get_latent_variable(tgt, src, lengths)
 
-	lv_enc_hidden = tuple([torch.cat([enc_hidden[i], z_app[i], c_cat], z_app[i].dim()-1) for i in range(0, len(z_app))])
+        lv_enc_hidden = tuple([torch.cat([enc_hidden[i], z_app[i], c_cat], z_app[i].dim()-1) for i in range(0, len(z_app))])
 
-	# For attention
-	context = self.glb_linear(context)
+        # For attention
+        context = self.glb_linear(context)
 
-	# VAE decoding (Forward for Eq4)
+        # VAE decoding (Forward for Eq4)
         enc_state = self.decoder.init_decoder_state(src, context, lv_enc_hidden)
         out, dec_state, attns = self.decoder(tgt, context,
                                              enc_state if dec_state is None
-                                             else dec_state, c, c_iter, 
+                                             else dec_state, c, c_iter,
                                              context_lengths=lengths)
 
-	if not only_mle:
-	    # Random sampling (Forward for Eq6 & Eq7)
-	    rs_z_true = self.sampling(true_mu_dist, true_logvar_dist)
-	    rs_c_prior = Variable(torch.randn(src.shape[1], 1))
+        if not only_mle:
+            # Random sampling (Forward for Eq6 & Eq7)
+            rs_z_true = self.sampling(true_mu_dist, true_logvar_dist)
+            rs_c_prior = Variable(torch.randn(src.shape[1], 1))
             rs_c_prior = rs_c_prior.cuda() if self.is_cuda else rs_c_prior
             rs_enc_hidden = tuple([torch.cat([enc_hidden[i], rs_z_true[i], c_cat], rs_z_true[i].dim()-1) for i in range(0, len(rs_z_true))])
-	    rs_enc_state = self.decoder.init_decoder_state(src, context, rs_enc_hidden)
-	    soft_emb = self.soft_decoder(rs_enc_state, src.shape[1], context, lengths, rs_c_prior, src)
+            rs_enc_state = self.decoder.init_decoder_state(src, context, rs_enc_hidden)
+            soft_emb = self.soft_decoder(rs_enc_state, src.shape[1], context, lengths, rs_c_prior, src)
 
-	    # Forward for Eq6
-	    est_mu_dist, _ = self.get_latent_variable_soft(src, soft_emb, lengths, src.shape[1])
-	    loss_attr_z = sum([F.mse_loss(est_mu_dist[i], \
-		Variable(self.tt.FloatTensor(rs_z_true[i].data.cpu().numpy()))) for i in range(0, len(rs_z_true))])
+            # Forward for Eq6
+            est_mu_dist, _ = self.get_latent_variable_soft(src, soft_emb, lengths, src.shape[1])
+            loss_attr_z = sum([F.mse_loss(est_mu_dist[i], \
+                Variable(self.tt.FloatTensor(rs_z_true[i].data.cpu().numpy()))) for i in range(0, len(rs_z_true))])
 
-	    # Forward for Eq7
-	    est_c = self.glv.run_soft(src, soft_emb)
-	    loss_attr_c = F.mse_loss(est_c, rs_c_prior)
-	else:
-	    loss_attr_z = None
-	    loss_attr_c = None
+            # Forward for Eq7
+            est_c = self.glv.run_soft(src, soft_emb)
+            loss_attr_c = F.mse_loss(est_c, rs_c_prior)
+        else:
+            loss_attr_z = None
+            loss_attr_c = None
 
         if self.multigpu:
             # Not yet supported on multi-gpu

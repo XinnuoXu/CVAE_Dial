@@ -66,7 +66,7 @@ class LossComputeBase(nn.Module):
         return NotImplementedError
 
     def monolithic_compute_loss(self, batch, output, app_mu, app_logvar, true_mu,
-				true_logvar, loss_attr_z, loss_attr_c, attns):
+                                true_logvar, loss_attr_z, loss_attr_c, attns):
         """
         Compute the forward loss for the batch.
 
@@ -85,16 +85,16 @@ class LossComputeBase(nn.Module):
         app_logvar = torch.cat(app_logvar, app_logvar[0].dim()-1)
         true_mu = torch.cat(true_mu, true_mu[0].dim()-1)
         true_logvar = torch.cat(true_logvar, true_logvar[0].dim()-1)
-        shard_state = self._make_shard_state(batch, output, range_, app_mu, 
-		app_logvar, true_mu, true_logvar, loss_attr_z, loss_attr_c, attns)
+        shard_state = self._make_shard_state(batch, output, range_, app_mu,
+                app_logvar, true_mu, true_logvar, loss_attr_z, loss_attr_c, attns)
         loss, batch_stats = self._compute_loss(batch, **shard_state)
 
         return batch_stats
 
     def sharded_compute_loss(self, batch, output, attns,
                              cur_trunc, trunc_size, shard_size,
-                             normalization, app_mu, app_logvar, 
-			     true_mu, true_logvar, loss_attr_z, loss_attr_c):
+                             normalization, app_mu, app_logvar,
+                             true_mu, true_logvar, loss_attr_z, loss_attr_c):
         """Compute the forward loss and backpropagate.  Computation is done
         with shards and optionally truncation for memory efficiency.
 
@@ -127,8 +127,8 @@ class LossComputeBase(nn.Module):
         app_logvar = torch.cat(app_logvar, app_logvar[0].dim()-1)
         true_mu = torch.cat(true_mu, true_mu[0].dim()-1)
         true_logvar = torch.cat(true_logvar, true_logvar[0].dim()-1)
-        shard_state = self._make_shard_state(batch, output, range_, app_mu, 
-			app_logvar, true_mu, true_logvar, loss_attr_z, loss_attr_c, attns)
+        shard_state = self._make_shard_state(batch, output, range_, app_mu,
+                        app_logvar, true_mu, true_logvar, loss_attr_z, loss_attr_c, attns)
 
         for shard in shards(shard_state, shard_size):
             loss, stats = self._compute_loss(batch, **shard)
@@ -189,8 +189,8 @@ class NMTLossCompute(LossComputeBase):
             self.criterion = nn.NLLLoss(weight, size_average=False)
         self.confidence = 1.0 - label_smoothing
 
-    def _make_shard_state(self, batch, output, range_, app_mu, app_logvar, 
-		true_mu, true_logvar, loss_attr_z, loss_attr_c, attns=None):
+    def _make_shard_state(self, batch, output, range_, app_mu, app_logvar,
+                true_mu, true_logvar, loss_attr_z, loss_attr_c, attns=None):
         return {
             "output": output,
             "target": batch.tgt[range_[0] + 1: range_[1]],
@@ -202,8 +202,8 @@ class NMTLossCompute(LossComputeBase):
             "loss_attr_c": loss_attr_c
         }
 
-    def _compute_loss(self, batch, output, target, app_mu, app_logvar, 
-		true_mu, true_logvar, loss_attr_z = None, loss_attr_c = None):
+    def _compute_loss(self, batch, output, target, app_mu, app_logvar,
+                true_mu, true_logvar, loss_attr_z = None, loss_attr_c = None):
 
         scores = self.generator(self._bottle(output))
 
@@ -224,9 +224,9 @@ class NMTLossCompute(LossComputeBase):
         kl = (torch.exp(app_logvar) + (app_mu - true_mu)**2)/torch.exp(true_logvar) - 1 + true_logvar - app_logvar
         kl_loss = torch.mean(0.5 * torch.sum(kl, 1))
 
-	if (loss_attr_z is None) or (loss_attr_c is None):
+        if (loss_attr_z is None) or (loss_attr_c is None):
             loss += 100 * kl_loss
-	else:
+        else:
             loss += 100 * kl_loss + loss_attr_z * 10 + loss_attr_c * 10
 
         if self.confidence < 1:

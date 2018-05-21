@@ -63,8 +63,8 @@ class GlobalAttention(nn.Module):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
-	self.cuda = cuda
-	self.tt = torch.cuda if cuda else torch
+        self.cuda = cuda
+        self.tt = torch.cuda if cuda else torch
         self.attn_type = attn_type
         assert (self.attn_type in ["dot", "general", "mlp"]), (
                 "Please select a valid attention type.")
@@ -81,7 +81,7 @@ class GlobalAttention(nn.Module):
 
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
-	self.sigmoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
 
         if coverage:
             self.linear_cover = nn.Linear(1, dim, bias=False)
@@ -145,7 +145,7 @@ class GlobalAttention(nn.Module):
           * Attention distribtutions for each query
              `[tgt_len x batch x src_len]`
         """
-	
+
         # one step input
         if input.dim() == 2:
             one_step = True
@@ -184,16 +184,16 @@ class GlobalAttention(nn.Module):
         # over all the source hidden states
         c = torch.bmm(align_vectors, context)
 
-	ctl_diff = ctl.expand(-1, ctl_iter.size()[1]) - ctl_iter
-	weights_attn = self.sigmoid(ctl_diff) * 1.3
-	weights_lm = 1 - self.sigmoid(ctl_diff) * 1.3
+        ctl_diff = ctl.expand(-1, ctl_iter.size()[1]) - ctl_iter
+        weights_attn = self.sigmoid(ctl_diff) * 1.3
+        weights_lm = 1 - self.sigmoid(ctl_diff) * 1.3
 
-	weights_attn = weights_attn.expand(c.size()[2], -1, -1)
-	weights_lm = weights_lm.expand(c.size()[2], -1, -1)
-	weights_attn = torch.transpose(weights_attn, 0, 1)
-	weights_attn = torch.transpose(weights_attn, 1, 2)
-	weights_lm = torch.transpose(weights_lm, 0, 1)
-	weights_lm = torch.transpose(weights_lm, 1, 2)
+        weights_attn = weights_attn.expand(c.size()[2], -1, -1)
+        weights_lm = weights_lm.expand(c.size()[2], -1, -1)
+        weights_attn = torch.transpose(weights_attn, 0, 1)
+        weights_attn = torch.transpose(weights_attn, 1, 2)
+        weights_lm = torch.transpose(weights_lm, 0, 1)
+        weights_lm = torch.transpose(weights_lm, 1, 2)
 
         # concatenate
         concat_c = torch.cat([c * weights_attn, input * weights_lm], 2).view(batch*targetL, dim*2)
