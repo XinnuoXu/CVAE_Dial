@@ -5,6 +5,7 @@ import numpy as np
 
 from allennlp.models.archival import load_archive
 from allennlp.service.predictors import Predictor
+from coherence import *
 
 
 # Monkey-patch for models trained with Torch 0.4 to run on 0.3.1
@@ -38,7 +39,8 @@ class DiscrWrapper(object):
                     for s in vect.transpose()]
 
         def _ints_to_words(self, vect, dict_type):
-            return [[self.vocab[dict_type].itos[w] for w in s if w != 0] for s in vect.transpose()]
+            return [[self.vocab[dict_type].itos[w] for w in s if w != 0]
+                    for s in vect.transpose()]
 
         def _predict(self, src_sents, tgt_sents):
             results = [self.discr.predict_json({'context': ctx, 'response': resp})
@@ -46,26 +48,27 @@ class DiscrWrapper(object):
             return [r['class_probabilities'][r['all_labels'].index('pos')] for r in results]
 
         def run(self, src, tgt):
-            src = src.view(src.size()[0], -1)
-            tgt = tgt.view(tgt.size()[0], -1)
+            src = src.view(src.size()[0], -1).data.numpy()
+            tgt = tgt.view(tgt.size()[0], -1).data.numpy()
             src_sents = self._ints_to_sents(src, 'src')
             tgt_sents = self._ints_to_sents(tgt, 'tgt')
             return self._predict(src_sents, tgt_sents)
 
         def run_iter(self, src, tgt):
-            src = src.view(src.size()[0], -1)
+            src = src.view(src.size()[0], -1).data.numpy()
             src_sents = self._ints_to_sents(src, 'src')
-            tgt = tgt.view(tgt.size()[0], -1)
+            tgt = tgt.view(tgt.size()[0], -1).data.numpy()
             tgt_words = self._ints_to_words(tgt, 'tgt')
             sim_list = []
-            for i in range(0, tgt.size()[0]):
+            for i in range(0, tgt.shape[0]):
                 tgt_sents = [' '.join(w for w in s[:i + 1]) for s in tgt_words]
                 sim_list.append(self._predict(src_sents, tgt_sents))
             return np.array(sim_list).transpose()
 
         def run_soft(self, src, tgt):
+            import pudb; pu.db
             # Src emb
-            src = src.view(src.size()[0], -1)
+            src = src.view(src.size()[0], -1).data.numpy()
             src_sents = self._ints_to_sents(src, 'src')
 
             # taking the argmax for tgt
