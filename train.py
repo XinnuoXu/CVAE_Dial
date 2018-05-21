@@ -20,6 +20,10 @@ import onmt.modules
 from onmt.Utils import use_gpu
 import opts
 
+# start PuDb on error
+from debug.helper import exc_info_hook
+sys.excepthook = exc_info_hook
+
 parser = argparse.ArgumentParser(
     description='train.py',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
