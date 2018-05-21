@@ -35,11 +35,11 @@ class DiscrWrapper(object):
             self.discr = Predictor.from_archive(archive, 'dialogue_context-predictor')
 
         def _ints_to_sents(self, vect, dict_type):
-            return [' '.join([self.vocab[dict_type].itos[w] for w in s if w != 0])
+            return [' '.join([self.vocab[dict_type].itos[w] for w in s if w < 3])
                     for s in vect.transpose()]
 
         def _ints_to_words(self, vect, dict_type):
-            return [[self.vocab[dict_type].itos[w] for w in s if w != 0]
+            return [[self.vocab[dict_type].itos[w] for w in s if w < 3]  # ignore <blank> <s> </s>
                     for s in vect.transpose()]
 
         def _predict(self, src_sents, tgt_sents):
@@ -48,16 +48,16 @@ class DiscrWrapper(object):
             return [r['class_probabilities'][r['all_labels'].index('pos')] for r in results]
 
         def run(self, src, tgt):
-            src = src.view(src.size()[0], -1).data.numpy()
-            tgt = tgt.view(tgt.size()[0], -1).data.numpy()
+            src = src.view(src.size()[0], -1).data.cpu().numpy()
+            tgt = tgt.view(tgt.size()[0], -1).data.cpu().numpy()
             src_sents = self._ints_to_sents(src, 'src')
             tgt_sents = self._ints_to_sents(tgt, 'tgt')
             return self._predict(src_sents, tgt_sents)
 
         def run_iter(self, src, tgt):
-            src = src.view(src.size()[0], -1).data.numpy()
+            src = src.view(src.size()[0], -1).data.cpu().numpy()
             src_sents = self._ints_to_sents(src, 'src')
-            tgt = tgt.view(tgt.size()[0], -1).data.numpy()
+            tgt = tgt.view(tgt.size()[0], -1).data.cpu().numpy()
             tgt_words = self._ints_to_words(tgt, 'tgt')
             sim_list = []
             for i in range(0, tgt.shape[0]):
@@ -68,10 +68,10 @@ class DiscrWrapper(object):
         def run_soft(self, src, tgt):
             import pudb; pu.db
             # Src emb
-            src = src.view(src.size()[0], -1).data.numpy()
+            src = src.view(src.size()[0], -1).data.cpu().numpy()
             src_sents = self._ints_to_sents(src, 'src')
 
             # taking the argmax for tgt
-            tgt = np.array([x.max(1)[1].data.numpy() for x in tgt])
+            tgt = np.array([x.max(1)[1].data.cpu().numpy() for x in tgt])
             tgt_sents = self._ints_to_sents(tgt, 'tgt')
             return self._predict(src_sents, tgt_sents)

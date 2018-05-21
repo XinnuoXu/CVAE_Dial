@@ -750,7 +750,7 @@ class LatentVaraibleModel(nn.Module):
         bos = self.tgt_dict.stoi[onmt.io.BOS_WORD]
         inp = Variable(self.tt.LongTensor(batch_size).fill_(bos).view(1, batch_size, -1))
         # First word
-        c_list = self.discriminator.run(src, inp)
+        c_list = self.discr.run(src, inp)
         c_iter = Variable(self.tt.FloatTensor(c_list).contiguous().view(len(c_list), -1))
         dec_out, dec_states, attn = self.decoder(inp, context, rs_enc_state, c, c_iter, context_lengths=lengths)
 
