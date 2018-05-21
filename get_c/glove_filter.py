@@ -15,7 +15,8 @@ from preprocess import pre_processor
 
 parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 RNN/LSTM Language Model')
 # Model training
-parser.add_argument('--data_path', type=str, default='../../../GloVe_training_data/GloVe_train.dat',
+#parser.add_argument('--data_path', type=str, default='../../../GloVe_training_data/GloVe_train.dat',
+parser.add_argument('--data_path', type=str, default='./examples/GloVe_train.dat',
                     help='Location of the data corpus')
 parser.add_argument('--corpus_model_path', type=str, default='./corpus.model',
                     help='Location of the corpus model')

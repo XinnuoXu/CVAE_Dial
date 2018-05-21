@@ -407,9 +407,11 @@ def translate_opts(parser):
     group = parser.add_argument_group('Beam')
     group.add_argument('-beam_size',  type=int, default=5,
                        help='Beam size')
+    group.add_argument('-c_control',  type=float, default=100,
+		       help='Coherence controller')
     group.add_argument('-min_length', type=int, default=0,
                        help='Minimum prediction length')
-    group.add_argument('-max_length', type=int, default=100,
+    group.add_argument('-max_length', type=int, default=30,
                        help='Maximum prediction length.')
     group.add_argument('-max_sent_length', action=DeprecateAction,
                        help="Deprecated, use `-max_length` instead")

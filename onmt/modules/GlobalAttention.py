@@ -59,10 +59,12 @@ class GlobalAttention(nn.Module):
        attn_type (str): type of attention to use, options [dot,general,mlp]
 
     """
-    def __init__(self, dim, coverage=False, attn_type="dot"):
+    def __init__(self, dim, cuda, coverage=False, attn_type="dot"):
         super(GlobalAttention, self).__init__()
 
         self.dim = dim
+	self.cuda = cuda
+	self.tt = torch.cuda if cuda else torch
         self.attn_type = attn_type
         assert (self.attn_type in ["dot", "general", "mlp"]), (
                 "Please select a valid attention type.")
@@ -75,10 +77,11 @@ class GlobalAttention(nn.Module):
             self.v = BottleLinear(dim, 1, bias=False)
         # mlp wants it with bias
         out_bias = self.attn_type == "mlp"
-        self.linear_out = nn.Linear(dim*2, dim, bias=out_bias)
+        self.linear_trans = nn.Linear(dim * 2, dim, bias=out_bias)
 
         self.sm = nn.Softmax()
         self.tanh = nn.Tanh()
+	self.sigmoid = nn.Sigmoid()
 
         if coverage:
             self.linear_cover = nn.Linear(1, dim, bias=False)
@@ -126,7 +129,7 @@ class GlobalAttention(nn.Module):
 
             return self.v(wquh.view(-1, dim)).view(tgt_batch, tgt_len, src_len)
 
-    def forward(self, input, context, context_lengths=None, coverage=None):
+    def forward(self, input, context, ctl, ctl_iter, context_lengths=None, coverage=None):
         """
 
         Args:
@@ -142,7 +145,7 @@ class GlobalAttention(nn.Module):
           * Attention distribtutions for each query
              `[tgt_len x batch x src_len]`
         """
-
+	
         # one step input
         if input.dim() == 2:
             one_step = True
@@ -181,9 +184,21 @@ class GlobalAttention(nn.Module):
         # over all the source hidden states
         c = torch.bmm(align_vectors, context)
 
+	ctl_diff = ctl.expand(-1, ctl_iter.size()[1]) - ctl_iter
+	weights_attn = self.sigmoid(ctl_diff) * 1.3
+	weights_lm = 1 - self.sigmoid(ctl_diff) * 1.3
+
+	weights_attn = weights_attn.expand(c.size()[2], -1, -1)
+	weights_lm = weights_lm.expand(c.size()[2], -1, -1)
+	weights_attn = torch.transpose(weights_attn, 0, 1)
+	weights_attn = torch.transpose(weights_attn, 1, 2)
+	weights_lm = torch.transpose(weights_lm, 0, 1)
+	weights_lm = torch.transpose(weights_lm, 1, 2)
+
         # concatenate
-        concat_c = torch.cat([c, input], 2).view(batch*targetL, dim*2)
-        attn_h = self.linear_out(concat_c).view(batch, targetL, dim)
+        concat_c = torch.cat([c * weights_attn, input * weights_lm], 2).view(batch*targetL, dim*2)
+        attn_h = self.linear_trans(concat_c).view(batch, targetL, dim)
+
         if self.attn_type in ["general", "dot"]:
             attn_h = self.tanh(attn_h)
 

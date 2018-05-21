@@ -13,7 +13,7 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder, LatentVaraibleModel
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder, AudioEncoder
+                         CNNEncoder, CNNDecoder, AudioEncoder, Gate
 from onmt.Utils import use_gpu
 from glove_disc import GloVe_Discriminator
 
@@ -88,7 +88,7 @@ def make_encoder(opt, embeddings, for_vae=False):
                           rnn_size, dropout, embeddings)
 
 
-def make_decoder(opt, embeddings):
+def make_decoder(opt, embeddings, gpu):
     """
     Various decoder dispatcher function.
     Args:
@@ -106,7 +106,7 @@ def make_decoder(opt, embeddings):
                           embeddings)
     elif opt.input_feed:
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
-                                   opt.dec_layers, opt.rnn_size + opt.size_vae + opt.size_c,
+                                   opt.dec_layers, opt.rnn_size + opt.size_vae + opt.size_c, gpu,
                                    opt.global_attention,
                                    opt.coverage_attn,
                                    opt.context_gate,
@@ -115,7 +115,7 @@ def make_decoder(opt, embeddings):
                                    embeddings)
     else:
         return StdRNNDecoder(opt.rnn_type, opt.brnn,
-                             opt.dec_layers, opt.rnn_size + opt.size_vae + opt.size_c,
+                             opt.dec_layers, opt.rnn_size + opt.size_vae  + opt.size_c, gpu,
                              opt.global_attention,
                              opt.coverage_attn,
                              opt.context_gate,
@@ -179,7 +179,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
-    decoder = make_decoder(model_opt, tgt_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings, gpu)
 
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
@@ -279,7 +279,7 @@ def make_latent_variable_LSTM(model_opt, fields, gpu, checkpoint=None):
 
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
-    decoder = make_decoder(model_opt, tgt_embeddings)
+    decoder = make_decoder(model_opt, tgt_embeddings, gpu)
 
     # Make NMTModel(= encoder + decoder).
     model = LatentVaraibleModel(encoder, decoder, tgt_dict,
@@ -296,8 +296,7 @@ def make_latent_variable_LSTM(model_opt, fields, gpu, checkpoint=None):
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:
-        generator = CopyGenerator(model_opt.rnn_size + model_opt.size_vae + model_opt.size_c,
-                                  fields["tgt"].vocab)
+        generator = CopyGenerator(model_opt.rnn_size + model_opt.size_vae + model_opt.size_c, fields["tgt"].vocab)
 
     # Load the model states from checkpoint or initialize them.
     if checkpoint is not None:
