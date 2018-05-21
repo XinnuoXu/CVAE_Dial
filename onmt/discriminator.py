@@ -35,17 +35,30 @@ class DiscrWrapper(object):
             self.discr = Predictor.from_archive(archive, 'dialogue_context-predictor')
 
         def _ints_to_sents(self, vect, dict_type):
-            return [' '.join([self.vocab[dict_type].itos[w] for w in s if w < 3])
+            return [' '.join([self.vocab[dict_type].itos[w] for w in s if w > 2])  # ignore <blank> <s> </s>
                     for s in vect.transpose()]
 
         def _ints_to_words(self, vect, dict_type):
-            return [[self.vocab[dict_type].itos[w] for w in s if w < 3]  # ignore <blank> <s> </s>
+            return [[self.vocab[dict_type].itos[w] if w > 2 else None for w in s]
                     for s in vect.transpose()]
 
         def _predict(self, src_sents, tgt_sents):
-            results = [self.discr.predict_json({'context': ctx, 'response': resp})
-                       for ctx, resp in zip(src_sents, tgt_sents)]
-            return [r['class_probabilities'][r['all_labels'].index('pos')] for r in results]
+            # avoid sending empty tgt_sents to the classifier or it'll crash
+            batch = [{'context': ctx, 'response': resp}
+                     for ctx, resp in zip(src_sents, tgt_sents)
+                     if resp]
+            if not batch:
+                return [0.0] * len(tgt_sents)
+            results = self.discr.predict_batch_json(batch)
+            results = [r['class_probabilities'][r['all_labels'].index('pos')] for r in results]
+            results.reverse()
+            ret = []
+            for resp in reversed(tgt_sents):
+                if resp:
+                    ret.append(results.pop())
+                else:
+                    ret.append(0.0)
+            return ret
 
         def run(self, src, tgt):
             src = src.view(src.size()[0], -1).data.cpu().numpy()
@@ -61,12 +74,11 @@ class DiscrWrapper(object):
             tgt_words = self._ints_to_words(tgt, 'tgt')
             sim_list = []
             for i in range(0, tgt.shape[0]):
-                tgt_sents = [' '.join(w for w in s[:i + 1]) for s in tgt_words]
+                tgt_sents = [' '.join(w for w in s[:i + 1] if w is not None) for s in tgt_words]
                 sim_list.append(self._predict(src_sents, tgt_sents))
             return np.array(sim_list).transpose()
 
         def run_soft(self, src, tgt):
-            import pudb; pu.db
             # Src emb
             src = src.view(src.size()[0], -1).data.cpu().numpy()
             src_sents = self._ints_to_sents(src, 'src')

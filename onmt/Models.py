@@ -760,7 +760,7 @@ class LatentVaraibleModel(nn.Module):
             prob_list.append(out)
             soft_emb = torch.mm(out, self.decoder.embeddings.word_lut.weight).view(1, batch_size, -1)
             c_list_iter = self.discr.run_soft(src, prob_list)
-            c_iter = c_list_iter.view(c_list_iter.size()[0], -1)
+            c_iter = Variable(self.tt.FloatTensor(c_list_iter).contiguous().view(len(c_list), -1))
             dec_out, dec_states, attn = self.decoder(soft_emb, context, dec_states, c, c_iter, context_lengths=lengths, soft=True)
         return prob_list
 
@@ -832,6 +832,7 @@ class LatentVaraibleModel(nn.Module):
 
             # Forward for Eq7
             est_c = self.discr.run_soft(src, soft_emb)
+            est_c = Variable(self.tt.FloatTensor(est_c).contiguous())
             loss_attr_c = F.mse_loss(est_c, rs_c_prior)
         else:
             loss_attr_z = None
