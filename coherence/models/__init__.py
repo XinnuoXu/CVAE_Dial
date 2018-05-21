@@ -1,0 +1,6 @@
+from coherence.models.dialogue_context_coherence_classifier import DialogueContextCoherenceClassifier
+from coherence.models.dialogue_context_coherence_attention_classifier import DialogueContextCoherenceAttentionClassifier
+from coherence.models.dialogue_context_hierarchical_coherence_classifier \
+    import DialogueContextHierarchicalCoherenceClassifier
+from coherence.models.dialogue_context_hierarchical_coherence_attention_classifier \
+    import DialogueContextHierarchicalCoherenceAttentionClassifier
