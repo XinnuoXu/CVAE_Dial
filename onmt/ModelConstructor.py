@@ -16,7 +16,7 @@ from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          CNNEncoder, CNNDecoder, AudioEncoder, Gate
 from onmt.Utils import use_gpu
 
-from glove_disc import import GloVe_Discriminator
+from onmt.glove_disc import GloVe_Discriminator
 #from allennlp.models.archival import load_archive
 #from allennlp.service.predictors import Predictor
 
