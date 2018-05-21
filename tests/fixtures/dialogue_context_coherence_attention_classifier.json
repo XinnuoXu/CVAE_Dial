@@ -15,8 +15,8 @@
       "tokens": {
         "type": "embedding",
 //        "pretrained_file": "../embeddings/glove.6B/glove.6B.100d.txt.gz",
-        "projection_dim": 2,
-        "embedding_dim": 100,
+//        "projection_dim": 5,
+        "embedding_dim": 50,
         "trainable": true
       }
     },
@@ -37,20 +37,20 @@
 //      "dropout": 0.2
 //    },
     "attend_feedforward": {
-      "input_dim": 2,
+      "input_dim": 50,
       "num_layers": 1,
-      "hidden_dims": 2,
+      "hidden_dims": 60,
       "activations": "relu"
     },
     "similarity_function": {"type": "dot_product"},
     "compare_feedforward": {
-      "input_dim": 4,
+      "input_dim": 100,
       "num_layers": 1,
-      "hidden_dims": 2,
+      "hidden_dims": 70,
       "activations": "relu"
     },
     "classifier_feedforward": {
-      "input_dim": 4,
+      "input_dim": 140,
       "num_layers": 1,
       "hidden_dims": 2,
       "activations": ["linear"],

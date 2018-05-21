@@ -7,7 +7,7 @@ from coherence.dataset_readers.dialogue_context import DialogueContextDatasetRea
 class DialogueContextCoherenceClassifierTest(ModelTestCase):
     def setUp(self):
         super(DialogueContextCoherenceClassifierTest, self).setUp()
-        self.set_up_model('tests/fixtures/dialogue_context_hierarchical_coherence_classifier.json',
+        self.set_up_model('tests/fixtures/dialogue_context_hierarchical_coherence_attention_classifier.json',
                           'tests/fixtures/debug')
 
     def test_model_can_train_save_and_load(self):

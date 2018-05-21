@@ -9,7 +9,7 @@ MODEL=trained_models/${CLASSIFIER}${2}
 allennlp train \
 ${EXPERIMENT} \
 -s ${MODEL} \
---include-package coherence
+--include-package coherence > /dev/null
 
 #--file-friendly-logging \
 

@@ -88,7 +88,7 @@ class DialogueContextCoherenceAttentionClassifier(Model):
         r2c_attention = last_dim_softmax(similarity_matrix.transpose(1, 2).contiguous(), context_mask)
         attended_context = weighted_sum(embedded_context, r2c_attention)
 
-        # batch x context_length x embedded_context_dim + embedded_response_dim
+        # batch x context_length x embedded_context_dim + attended_response_dim
         context_compare_input = torch.cat([embedded_context, attended_response], dim=-1)
         response_compare_input = torch.cat([embedded_response, attended_context], dim=-1)
 

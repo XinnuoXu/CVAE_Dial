@@ -6,3 +6,4 @@ __pycache__/
 .gitignore.swp
 trained_models/
 *.py[cod]
+discriminator_results.txt

@@ -29,7 +29,8 @@ class DialogueContextHierarchicalCoherenceAttentionClassifier(Model):
                  similarity_function: SimilarityFunction,
                  compare_feedforward: FeedForward,
                  classifier_feedforward: FeedForward,
-                 context_encoder: Optional[Seq2SeqEncoder] = None,
+                 utterance_encoder: Seq2VecEncoder,
+                 context_encoder: Seq2SeqEncoder,
                  response_encoder: Optional[Seq2SeqEncoder] = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
@@ -37,6 +38,7 @@ class DialogueContextHierarchicalCoherenceAttentionClassifier(Model):
 
         self.text_field_embedder = text_field_embedder
         self.num_classes = vocab.get_vocab_size("labels")
+        self.utterances_encoder = TimeDistributed(utterance_encoder)
         self.context_encoder = context_encoder
         self.response_encoder = response_encoder
         self.attend_feedforward = TimeDistributed(attend_feedforward)
@@ -65,13 +67,17 @@ class DialogueContextHierarchicalCoherenceAttentionClassifier(Model):
                 label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
 
         embedded_context = self.text_field_embedder(context)
+        # batch_size x sents_length (3) x max_context_seq_length [0,1s]
+        utterances_mask = get_text_field_mask(context, 1).float()
+        # batch_size x sents_length (3) [0,1s]
         context_mask = get_text_field_mask(context).float()
+        # batch_size x sents_length x utt_emb_dim
+        encoded_utterances = self.utterances_encoder(embedded_context, utterances_mask)
+        # batch_size x context_emb_dim
+        embedded_context = self.context_encoder(encoded_utterances, context_mask)
 
         embedded_response = self.text_field_embedder(response)
         response_mask = get_text_field_mask(response).float()
-
-        if self.context_encoder:
-            embedded_context = self.context_encoder(embedded_context, context_mask)
         if self.response_encoder:
             embedded_response = self.response_encoder(embedded_response, response_mask)
 
@@ -142,11 +148,8 @@ class DialogueContextHierarchicalCoherenceAttentionClassifier(Model):
         embedder_params = params.pop("text_field_embedder")
         text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
 
-        context_encoder_params = params.pop("context_encoder", None)
-        if context_encoder_params is not None:
-            context_encoder = Seq2SeqEncoder.from_params(context_encoder_params)
-        else:
-            context_encoder = None
+        utterance_encoder = Seq2VecEncoder.from_params(params.pop("utterance_encoder"))
+        context_encoder = Seq2SeqEncoder.from_params(params.pop("context_encoder"))
 
         response_encoder_params = params.pop("response_encoder", None)
         if response_encoder_params is not None:
@@ -168,6 +171,7 @@ class DialogueContextHierarchicalCoherenceAttentionClassifier(Model):
                    similarity_function=similarity_function,
                    compare_feedforward=compare_feedforward,
                    classifier_feedforward=classifier_feedforward,
+                   utterance_encoder=utterance_encoder,
                    context_encoder=context_encoder,
                    response_encoder=response_encoder,
                    initializer=initializer,
