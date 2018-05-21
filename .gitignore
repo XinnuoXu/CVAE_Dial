@@ -7,3 +7,4 @@ __pycache__/
 trained_models/
 *.py[cod]
 discriminator_results.txt
+*.sw[po]

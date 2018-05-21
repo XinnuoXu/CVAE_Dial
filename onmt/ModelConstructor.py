@@ -16,9 +16,8 @@ from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          CNNEncoder, CNNDecoder, AudioEncoder, Gate
 from onmt.Utils import use_gpu
 
-from onmt.glove_disc import GloVe_Discriminator
-#from allennlp.models.archival import load_archive
-#from allennlp.service.predictors import Predictor
+#from onmt.glove_disc import GloVe_Discriminator
+from onmt.discriminator import DiscrWrapper
 
 
 def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True, for_vae=False):
@@ -270,10 +269,9 @@ def make_latent_variable_LSTM(model_opt, fields, gpu, checkpoint=None):
     tgt_embeddings = make_embeddings(model_opt, tgt_dict, feature_dicts, for_encoder=False)
 
     # Control variable
-    glv = GloVe_Discriminator(gpu)
-    glv_model = glv.load_model(model_opt.glove_dir)
-    #archive = load_archive(model_opt.disc_model)
-    #discriminator = Predictor.from_archive(archive, 'dialogue_context-predictor')
+    #glv = GloVe_Discriminator(gpu)
+    #glv_model = glv.load_model(model_opt.glove_dir)
+    discriminator = DiscrWrapper(model_opt.disc_model, gpu)
 
     # Share the embedding matrix - preprocess with share_vocab required.
     if model_opt.share_embeddings:
@@ -289,7 +287,7 @@ def make_latent_variable_LSTM(model_opt, fields, gpu, checkpoint=None):
     # Make NMTModel(= encoder + decoder).
     model = LatentVaraibleModel(encoder, decoder, tgt_dict,
                 enc_approx, approx_mu, approx_logvar,
-                enc_true, true_mu, true_logvar, glb, glv, # discriminator,
+                enc_true, true_mu, true_logvar, glb, discriminator,
 		model_opt.max_gen_len, gpu)
     model.model_type = model_opt.model_type
 

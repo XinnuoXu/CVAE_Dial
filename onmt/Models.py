@@ -644,7 +644,7 @@ class LatentVaraibleModel(nn.Module):
     def __init__(self, encoder, decoder, tgt_dict, \
                 enc_approx, approx_mu, approx_logvar, \
                 enc_true, true_mu, true_logvar, \
-                glb, glv, max_gen_len, cuda, multigpu=False):
+                glb, discriminator, max_gen_len, cuda, multigpu=False):
         self.multigpu = multigpu
         super(LatentVaraibleModel, self).__init__()
         self.encoder = encoder
@@ -659,7 +659,7 @@ class LatentVaraibleModel(nn.Module):
         self.true_logvar = true_logvar
 
         self.glb_linear = glb
-        self.glv = glv
+        self.discr = discriminator
         self.is_cuda = cuda
         self.tt = torch.cuda if cuda else torch
 
@@ -750,7 +750,7 @@ class LatentVaraibleModel(nn.Module):
         bos = self.tgt_dict.stoi[onmt.io.BOS_WORD]
         inp = Variable(self.tt.LongTensor(batch_size).fill_(bos).view(1, batch_size, -1))
         # First word
-        c_list = self.glv.run(src, inp)
+        c_list = self.discriminator.run(src, inp)
         c_iter = Variable(self.tt.FloatTensor(c_list).contiguous().view(len(c_list), -1))
         dec_out, dec_states, attn = self.decoder(inp, context, rs_enc_state, c, c_iter, context_lengths=lengths)
 
@@ -759,7 +759,7 @@ class LatentVaraibleModel(nn.Module):
             out = F.softmax(self.generator.forward(dec_out).view(batch_size, -1), dim=1)
             prob_list.append(out)
             soft_emb = torch.mm(out, self.decoder.embeddings.word_lut.weight).view(1, batch_size, -1)
-            c_list_iter = self.glv.run_soft(src, prob_list)
+            c_list_iter = self.discr.run_soft(src, prob_list)
             c_iter = c_list_iter.view(c_list_iter.size()[0], -1)
             dec_out, dec_states, attn = self.decoder(soft_emb, context, dec_states, c, c_iter, context_lengths=lengths, soft=True)
         return prob_list
@@ -792,13 +792,13 @@ class LatentVaraibleModel(nn.Module):
         enc_hidden, context = self.encoder(src, lengths)
 
         # Control Variable
-        c_list = self.glv.run(src, tgt)
+        c_list = self.discr.run(src, tgt)
         c = Variable(self.tt.FloatTensor(c_list).view(len(c_list), -1))
         c_var = Variable(self.tt.FloatTensor(c_list).view(-1, len(c_list), 1))
         c_cat = torch.cat([c_var, c_var.clone()], 0)
 
         # Control Variable step by step
-        c_iter = Variable(self.tt.FloatTensor(self.glv.run_iter(src, tgt)))
+        c_iter = Variable(self.tt.FloatTensor(self.discr.run_iter(src, tgt)))
 
         # Latent Variable
         z_app, z_true, app_mu_dist, app_logvar_dist, true_mu_dist, true_logvar_dist = \
@@ -831,7 +831,7 @@ class LatentVaraibleModel(nn.Module):
                 Variable(self.tt.FloatTensor(rs_z_true[i].data.cpu().numpy()))) for i in range(0, len(rs_z_true))])
 
             # Forward for Eq7
-            est_c = self.glv.run_soft(src, soft_emb)
+            est_c = self.discr.run_soft(src, soft_emb)
             loss_attr_c = F.mse_loss(est_c, rs_c_prior)
         else:
             loss_attr_z = None
