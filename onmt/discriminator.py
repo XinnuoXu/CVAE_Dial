@@ -24,6 +24,7 @@ except AttributeError:
 
 
 class DiscrWrapper(object):
+    """Wrapper for the trained discriminator to make it work like GloVe."""
 
         def __init__(self, model_file, cuda):
             self.cuda = cuda
@@ -39,7 +40,7 @@ class DiscrWrapper(object):
                     for s in vect.transpose()]
 
         def _ints_to_words(self, vect, dict_type):
-            return [[self.vocab[dict_type].itos[w] if w > 2 else None for w in s]
+            return [[self.vocab[dict_type].itos[w] if w > 2 else None for w in s]  # ignore <blank> <s> </s>
                     for s in vect.transpose()]
 
         def _predict(self, src_sents, tgt_sents):
@@ -47,10 +48,11 @@ class DiscrWrapper(object):
             batch = [{'context': ctx, 'response': resp}
                      for ctx, resp in zip(src_sents, tgt_sents)
                      if resp]
-            if not batch:
+            if not batch:  # the whole batch is empty
                 return [0.0] * len(tgt_sents)
             results = self.discr.predict_batch_json(batch)
             results = [r['class_probabilities'][r['all_labels'].index('pos')] for r in results]
+            # cherry-pick results for valid sentences, fill the rest with 0's
             results.reverse()
             ret = []
             for resp in reversed(tgt_sents):
