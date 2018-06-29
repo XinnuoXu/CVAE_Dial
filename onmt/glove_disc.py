@@ -42,6 +42,16 @@ class GloVe_Discriminator(object):
 		tgt_emb = self.get_emb(tgt)
 		return [1 - cosine(src_emb[i], tgt_emb[i]) for i in range(0, src_emb.shape[0])]
 
+	def run_iter(self, src, tgt):
+		src = src.view(src.size()[0], -1)
+		src_emb = self.get_emb(src)
+		tgt = tgt.view(tgt.size()[0], -1)
+		sim_list = []
+		for i in range(0, tgt.size()[0]):
+		    tgt_emb = self.get_emb(tgt[:i+1, :].view(-1, tgt.size()[1]))
+		    sim_list.append([1 - cosine(src_emb[j], tgt_emb[j]) for j in range(0, src_emb.shape[0])])
+	        return np.array(sim_list).transpose()
+
 	def run_soft(self, src, tgt):
 		# Src emb
 		batch_size = src.shape[1]

@@ -85,6 +85,7 @@ def main():
     scorer = onmt.translate.GNMTGlobalScorer(opt.alpha, opt.beta)
     translator = onmt.translate.Translator(model, fields,
                                            beam_size=opt.beam_size,
+					   c_control=opt.c_control,
                                            n_best=opt.n_best,
                                            global_scorer=scorer,
                                            max_length=opt.max_length,

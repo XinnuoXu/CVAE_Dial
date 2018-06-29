@@ -15,7 +15,7 @@ if __name__ == '__main__':
 		uni_num = 0
 		bi_set = set()
 		bi_num = 0
-		for line in random.sample(line_list, min(2000, len(line_list))):
+		for line in random.sample(line_list, min(4000, len(line_list))):
 			flist = line.split(" ")
 			for x in flist:
 				uni_set.add(x)

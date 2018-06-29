@@ -193,7 +193,7 @@ class RNNDecoderBase(nn.Module):
        embeddings (:obj:`onmt.modules.Embeddings`): embedding module to use
     """
     def __init__(self, rnn_type, bidirectional_encoder, num_layers,
-                 hidden_size, attn_type="general",
+                 hidden_size, cuda, attn_type="general",
                  coverage_attn=False, context_gate=None,
                  copy_attn=False, dropout=0.0, embeddings=None):
         super(RNNDecoderBase, self).__init__()
@@ -205,6 +205,7 @@ class RNNDecoderBase(nn.Module):
         self.hidden_size = hidden_size
         self.embeddings = embeddings
         self.dropout = nn.Dropout(dropout)
+	self.cuda = cuda
 
         # Build the RNN.
         self.rnn = self._build_rnn(rnn_type, self._input_size, hidden_size,
@@ -221,7 +222,7 @@ class RNNDecoderBase(nn.Module):
         # Set up the standard attention.
         self._coverage = coverage_attn
         self.attn = onmt.modules.GlobalAttention(
-            hidden_size, coverage=coverage_attn,
+            hidden_size, self.cuda, coverage=coverage_attn,
             attn_type=attn_type
         )
 
@@ -229,11 +230,11 @@ class RNNDecoderBase(nn.Module):
         self._copy = False
         if copy_attn:
             self.copy_attn = onmt.modules.GlobalAttention(
-                hidden_size, attn_type=attn_type
+                hidden_size, self.cuda, attn_type=attn_type
             )
             self._copy = True
 
-    def forward(self, input, context, state, context_lengths=None, soft=False):
+    def forward(self, input, context, state, c, c_iter, context_lengths=None, soft=False):
         """
         Args:
             input (`LongTensor`): sequences of padded tokens
@@ -261,7 +262,7 @@ class RNNDecoderBase(nn.Module):
 
         # Run the forward pass of the RNN.
         hidden, outputs, attns, coverage = self._run_forward_pass(
-            input, context, state, soft, context_lengths=context_lengths)
+            input, context, state, soft, c, c_iter, context_lengths=context_lengths)
 
         # Update the state with the result.
         final_output = outputs[-1]
@@ -310,7 +311,7 @@ class StdRNNDecoder(RNNDecoderBase):
     Implemented without input_feeding and currently with no `coverage_attn`
     or `copy_attn` support.
     """
-    def _run_forward_pass(self, input, context, state, soft, context_lengths=None):
+    def _run_forward_pass(self, input, context, state, soft, c, c_iter, context_lengths=None):
         """
         Private helper for running the specific RNN forward pass.
         Must be overriden by all subclasses.
@@ -359,7 +360,7 @@ class StdRNNDecoder(RNNDecoderBase):
         # Calculate the attention.
         attn_outputs, attn_scores = self.attn(
             rnn_output.transpose(0, 1).contiguous(),  # (output_len, batch, d)
-            context.transpose(0, 1),                  # (contxt_len, batch, d)
+            context.transpose(0, 1), c, c_iter,    # (contxt_len, batch, d)
             context_lengths=context_lengths
         )
         attns["std"] = attn_scores
@@ -744,19 +745,22 @@ class LatentVaraibleModel(nn.Module):
         z_true = self.sampling(true_mu_dist, true_logvar_dist)
         return z_true
 
-    def soft_decoder(self, rs_enc_state, batch_size, context, lengths):
+    def soft_decoder(self, rs_enc_state, batch_size, context, lengths, c, src):
 	prob_list = []
 	bos = self.tgt_dict.stoi[onmt.io.BOS_WORD]
 	inp = Variable(self.tt.LongTensor(batch_size).fill_(bos).view(1, batch_size, -1))
 	# First word
-	dec_out, dec_states, attn = self.decoder(inp, context, rs_enc_state, context_lengths=lengths)
+	c_list = self.glv.run(src, inp)
+	c_iter = Variable(self.tt.FloatTensor(c_list).contiguous().view(len(c_list), -1))
+	dec_out, dec_states, attn = self.decoder(inp, context, rs_enc_state, c, c_iter, context_lengths=lengths)
     	for i in range(1, self.max_gen_len):
 	    dec_out = dec_out.squeeze(0)
-	    #out = F.softmax(Variable(self.generator.forward(dec_out).data.view(batch_size, -1)), dim=1)
 	    out = F.softmax(self.generator.forward(dec_out).view(batch_size, -1), dim=1)
 	    prob_list.append(out)
 	    soft_emb = torch.mm(out, self.decoder.embeddings.word_lut.weight).view(1, batch_size, -1)
-	    dec_out, dec_states, attn = self.decoder(soft_emb, context, dec_states, context_lengths=lengths, soft=True)
+	    c_list_iter = self.glv.run_soft(src, prob_list)
+	    c_iter = c_list_iter.view(c_list_iter.size()[0], -1)
+	    dec_out, dec_states, attn = self.decoder(soft_emb, context, dec_states, c, c_iter, context_lengths=lengths, soft=True)
 	return prob_list
 
     def forward(self, src, tgt, lengths, dec_state=None, only_mle = False):
@@ -786,26 +790,29 @@ class LatentVaraibleModel(nn.Module):
         # Seq2seq: Encode context
         enc_hidden, context = self.encoder(src, lengths)
 
+	# Control Variable
+	c_list = self.glv.run(src, tgt)
+	c = Variable(self.tt.FloatTensor(c_list).view(len(c_list), -1))
+	c_var = Variable(self.tt.FloatTensor(c_list).view(-1, len(c_list), 1))
+	c_cat = torch.cat([c_var, c_var.clone()], 0)
+
+	# Control Variable step by step
+	c_iter = Variable(self.tt.FloatTensor(self.glv.run_iter(src, tgt)))
+
         # Latent Variable
         z_app, z_true, app_mu_dist, app_logvar_dist, true_mu_dist, true_logvar_dist = \
 		self.get_latent_variable(tgt, src, lengths)
 
-	# Control Variable
-	c_list = self.glv.run(src, tgt)
-	c_var = Variable(self.tt.FloatTensor(c_list).view(-1, len(c_list), 1))
-	c = torch.cat([c_var, c_var.clone()], 0)
+	lv_enc_hidden = tuple([torch.cat([enc_hidden[i], z_app[i], c_cat], z_app[i].dim()-1) for i in range(0, len(z_app))])
 
-	# Concate initial hidden state
-        lv_enc_hidden = tuple([torch.cat([enc_hidden[i], z_app[i], c], z_app[i].dim()-1) for i in range(0, len(z_app))])
-
-	# Linear transfermation of attention
-        context = self.glb_linear(context)
+	# For attention
+	context = self.glb_linear(context)
 
 	# VAE decoding (Forward for Eq4)
         enc_state = self.decoder.init_decoder_state(src, context, lv_enc_hidden)
         out, dec_state, attns = self.decoder(tgt, context,
                                              enc_state if dec_state is None
-                                             else dec_state,
+                                             else dec_state, c, c_iter, 
                                              context_lengths=lengths)
 
 	if not only_mle:
@@ -813,10 +820,9 @@ class LatentVaraibleModel(nn.Module):
 	    rs_z_true = self.sampling(true_mu_dist, true_logvar_dist)
 	    rs_c_prior = Variable(torch.randn(src.shape[1], 1))
             rs_c_prior = rs_c_prior.cuda() if self.is_cuda else rs_c_prior
-            rs_enc_hidden = tuple([torch.cat([enc_hidden[i], rs_z_true[i], c], \
-		rs_z_true[i].dim()-1) for i in range(0, len(rs_z_true))])
+            rs_enc_hidden = tuple([torch.cat([enc_hidden[i], rs_z_true[i], c_cat], rs_z_true[i].dim()-1) for i in range(0, len(rs_z_true))])
 	    rs_enc_state = self.decoder.init_decoder_state(src, context, rs_enc_hidden)
-	    soft_emb = self.soft_decoder(rs_enc_state, src.shape[1], context, lengths)
+	    soft_emb = self.soft_decoder(rs_enc_state, src.shape[1], context, lengths, rs_c_prior, src)
 
 	    # Forward for Eq6
 	    est_mu_dist, _ = self.get_latent_variable_soft(src, soft_emb, lengths, src.shape[1])

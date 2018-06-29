@@ -1,5 +1,6 @@
 from __future__ import division
 import torch
+import numpy as np
 
 
 class Beam(object):
@@ -21,6 +22,7 @@ class Beam(object):
                  min_length=0):
 
         self.size = size
+	self.cuda = cuda
         self.tt = torch.cuda if cuda else torch
 
         # The score for each translation on the beam.
@@ -60,6 +62,26 @@ class Beam(object):
     def get_current_origin(self):
         "Get the backpointers for the current timestep."
         return self.prev_ks[-1]
+
+    def get_current_seq(self):
+        "Get the predicted string for the current timestep."
+	res = []; res_torch = []
+
+	if len(self.next_ys) == 1:
+	    return []
+
+	for k in range(0, self.next_ys[-1].size(0)):
+	    hyp, attn = self.get_hyp(len(self.next_ys), k)
+	    res.append(hyp)
+	mtx = np.array(res).transpose()
+
+	if self.cuda:
+	    for i in range(0, mtx.shape[0]):
+	        res_torch.append(torch.from_numpy(mtx[i]).cuda().view(-1, 1))
+	else:
+	    for i in range(0, mtx.shape[0]):
+	        res_torch.append(torch.from_numpy(mtx[i]).view(-1, 1))
+        return torch.cat(res_torch, dim = 1)
 
     def advance(self, word_probs, attn_out):
         """
