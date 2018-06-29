@@ -1,0 +1,14 @@
+./data/filter/bag_of_words
+./data/filter/opensubtitles
+*_gpu*
+*.pyc
+*.model
+*.dat
+diversity_all.sh
+translate_all.sh
+translate_merge.sh
+translate_test.sh
+*.swp
+./data/*.en
+./data/*.vi
+./data/*.pt
