@@ -76,7 +76,7 @@ pull up sooner . <u2> ok , skipper ! <u1> do you think they 'll ever get it ?	  
 ```
 
 At last, we randomly sample 5000 cases for `train-dev, dev, test` separately by running following commands and outputs for each set are similar with training set.
-* `python data_reading_shaffle.py ` for train-dev set
+* `python data_reading_shaffle.py train-dev` for train-dev set
 * `python data_reading_shaffle.py dev` for dev set
 * `python data_reading_shaffle.py test` for testing set
 
