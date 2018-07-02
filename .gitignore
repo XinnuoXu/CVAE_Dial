@@ -12,3 +12,4 @@ translate_test.sh
 ./data/*.en
 ./data/*.vi
 ./data/*.pt
+nohup*
