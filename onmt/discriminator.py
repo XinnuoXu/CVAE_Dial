@@ -24,15 +24,15 @@ except AttributeError:
 
 
 class DiscrWrapper(object):
-    """Wrapper for the trained discriminator to make it work like GloVe."""
+        """Wrapper for the trained discriminator to make it work like GloVe."""
 
         def __init__(self, model_file, cuda):
             self.cuda = cuda
-            self.tt = torch.cuda if cuda else torch
             self.dict_path = "./data/dialogue.vocab.pt"
             self.vocab = dict(torch.load(self.dict_path, "text"))
 
-            archive = load_archive(model_file)
+            # TODO fix this for multiple GPUs
+            archive = load_archive(model_file, cuda_device=0 if cuda else -1)
             self.discr = Predictor.from_archive(archive, 'dialogue_context-predictor')
 
         def _ints_to_sents(self, vect, dict_type):
