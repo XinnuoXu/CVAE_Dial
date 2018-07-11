@@ -4,7 +4,7 @@ Computing significance using bootstrap
 Prepare:
 - Put your 2 or more experiments into different directories (e.g. `A`, `B`, `C`).
 - In each directory, the file with system outputs must have the same name (e.g. output.txt, so you have `A/output.txt`, `B/output.txt`, `C/output.txt`).
-* You need a context and reference/ground truth file (e.g. context.txt, reference.txt). These are the same for all the experiments.
+* You need a context and reference/ground truth file (e.g. `context.txt`, `reference.txt`). These are the same for all the experiments.
 * You need an (empty) directory for logging and temporary files where you will run the experiment (e.g. `bootstrap-tmp`).
 * Set a confidence level, say 95%.
 
