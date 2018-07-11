@@ -19,4 +19,4 @@ Look on the console for outputs like this (or use `2> /dev/null` and it's the on
 A vs B BLEU: System 1 BLEU better: 1000 / 1000 = 1 -- BLEU SIGNIFICANT at 0.95 level
 B vs C BLEU: System 2 BLEU better: 723 / 1000 = 0.723
 ```
-It will tell you the p-value (here: 1) and the significance if it's above the confidence level. The first here is significant but the 2nd is not.
+It will tell you the p-value (here: 1 and 0.723) and the significance if it's above the confidence level. The first here is significant but the 2nd is not.
