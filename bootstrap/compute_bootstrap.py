@@ -35,7 +35,7 @@ def process_all(args):
     # create the ref and context SGM files
     lcall("%s -t src -n OST -l any %s %s/context.sgm" %
           (txt2sgm, args.context_fname, args.target_dir))
-    lcall("%s -t ref -m -n OST -l en %s %s/ref.sgm" %
+    lcall("%s -t ref -n OST -l en %s %s/ref.sgm" %
           (txt2sgm, args.ref_fname, args.target_dir))
 
     # create SGM files for all systems
