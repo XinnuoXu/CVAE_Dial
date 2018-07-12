@@ -252,11 +252,14 @@ if ($system_1_better_nist_fraction >= 0.5){
         print " -- NIST SIGNIFICANT at $level level";
     }
 }
-else {
+elsif ($system_2_better_nist_fraction >= 0.5){
     print "System 2 NIST better: $system_2_better_nist / $num_samples = $system_2_better_nist_fraction";
     if ((1 - $system_2_better_nist_fraction) < $p) {
         print " -- NIST SIGNIFICANT at $level level";
     }
+}
+else {
+    print "The systems are too similar"
 }
 print "\n";
 
@@ -266,12 +269,16 @@ if ($system_1_better_bleu_fraction >= 0.5){
             print " -- BLEU SIGNIFICANT at $level level";
     }
 }
-else {
+elsif ($system_2_better_bleu_fraction >= 0.5) {
     print "System 2 BLEU better: $system_2_better_bleu / $num_samples = $system_2_better_bleu_fraction";
     if ((1 - $system_2_better_bleu_fraction) < $p) {
             print " -- BLEU SIGNIFICANT at $level level";
     }
 }
+else {
+    print "The systems are too similar"
+}
+
 print "\n";
 exit;
 
