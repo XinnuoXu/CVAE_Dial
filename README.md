@@ -1,6 +1,6 @@
 # CVAE_XGate_dialogue_generator
 
-This project is a pytorch implementation for my paper "\emph{Xinnuo Xu, Ondrej Dusek, Yannis Konstas, and Verena Rieser}. Better conversations by modeling,filtering, and optimizing for coherence and diversity.In: Conference on Empirical Methods in NaturalLanguage Processing (EMNLP). Brussels, 2018."
+This project is a pytorch implementation for my paper "*Xinnuo Xu, Ondrej Dusek, Yannis Konstas, and Verena Rieser*. Better conversations by modeling,filtering, and optimizing for coherence and diversity.In: Conference on Empirical Methods in NaturalLanguage Processing (EMNLP). Brussels, 2018."
 
 
 ## Requirements
