@@ -2,7 +2,7 @@
 
 This project is a pytorch implementation for my paper "*Xinnuo Xu, Ondrej Dusek, Yannis Konstas, and Verena Rieser*. Better conversations by modeling,filtering, and optimizing for coherence and diversity. *In: Conference on Empirical Methods in NaturalLanguage Processing (EMNLP). Brussels, 2018*."
 
-\* *for*
+\* *This project is for model CVAE_XGates. For model CVAE_CGate, please visit https://github.com/XinnuoXu/CVAE_Dial_CGate*
 
 
 ## Requirements
