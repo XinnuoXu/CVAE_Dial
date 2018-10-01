@@ -7,6 +7,7 @@ from argparse import ArgumentParser
 import os
 import re
 from subprocess import call
+import sys
 
 MY_PATH = os.path.dirname(os.path.abspath(__file__))
 
