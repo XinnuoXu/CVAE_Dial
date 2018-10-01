@@ -6,10 +6,10 @@ from __future__ import unicode_literals
 import codecs
 import argparse
 
-from tgen.debug import exc_info_hook
-import sys
+#from tgen.debug import exc_info_hook
+#import sys
 # Start IPdb on error in interactive mode
-sys.excepthook = exc_info_hook
+#sys.excepthook = exc_info_hook
 
 
 def convert(args):

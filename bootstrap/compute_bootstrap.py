@@ -1,18 +1,18 @@
 #!/usr/bin/env python2
 # -"- coding: utf-8 -"-
 
+from __future__ import print_function
 
 from argparse import ArgumentParser
 import os
 import re
 from subprocess import call
-from tgen.logf import log_info
 
 MY_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 def lcall(arg_str):
-    log_info(arg_str)
+    print(arg_str, file=sys.stderr)
     return call(arg_str, shell=True)
 
 
@@ -62,7 +62,7 @@ def process_all(args):
                       (bootstrap, exp_id1, exp_id2, 1. - (0.01 * args.level), out_file))
             with open(out_file) as fh:
                 bootstrap_data = fh.readlines()
-                print "%s vs. %s: %s" % (exp_id1, exp_id2, bootstrap_data[1].strip())
+                print("%s vs. %s: %s" % (exp_id1, exp_id2, bootstrap_data[1].strip()))
 
 
 if __name__ == '__main__':
