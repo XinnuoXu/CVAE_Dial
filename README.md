@@ -22,7 +22,7 @@ data/filter/
 
 For the generator, a training pair consists of a dialogue context and a corresponding response. We consider three consecutive turns as the dialogue context and the following turn as the response. For the discriminator, positive examples are dialogue contexts with their following turn as the response, while negative examples are dialogue contexts with an utterance randomly sampled in the same dialogue as the response.
 
-We use toolkit [Opensubtitles processing tool](https://github.com/WattSocialBot/movie_tools) owned by [Ondrej Dusek](https://github.com/tuetschek) to extract dialogues from OpenSubtitles dataset `data/filter/opensubtitles/`.
+We use toolkit [Opensubtitles processing tool](https://github.com/tuetschek/nrno_movies) owned by [Ondrej Dusek](https://github.com/tuetschek) to extract dialogues from OpenSubtitles dataset `data/filter/opensubtitles/`.
 
 ```
 ~/data/movie_tools/convert_nrno_subs.py -D -s -S train:train-dev:dev:test -r 97:1:1:1 -d all_dialogues_cased opensubtitles/ dial.jsons.txt
